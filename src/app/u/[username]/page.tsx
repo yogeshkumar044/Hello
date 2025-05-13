@@ -34,6 +34,11 @@ const parseStringMessages = (messageString: string): string[] => {
 // Initial hardcoded messages
 const initialMessageString = "What's your favorite movie?||Do you have any pets?||What's your dream job?";
 
+// Create a schema for the suggestion prompt
+const suggestionPromptSchema = z.object({
+  topic: z.string().min(1, "Please enter a topic").max(200, "Topic is too long")
+});
+
 export default function SendMessage() {
   const params = useParams<{ username: string }>();
   const username = params.username;
@@ -43,9 +48,17 @@ export default function SendMessage() {
   const [suggestedMessages, setSuggestedMessages] = useState<string[]>(
     parseStringMessages(initialMessageString)
   );
+  const [promptInput, setPromptInput] = useState("");
 
   const form = useForm<z.infer<typeof messageSchema>>({
     resolver: zodResolver(messageSchema),
+  });
+
+  const suggestionForm = useForm<z.infer<typeof suggestionPromptSchema>>({
+    resolver: zodResolver(suggestionPromptSchema),
+    defaultValues: {
+      topic: ""
+    }
   });
 
   const messageContent = form.watch('content');
@@ -72,15 +85,16 @@ export default function SendMessage() {
     }
   };
 
-  const fetchSuggestedMessages = async () => {
+  const fetchSuggestedMessages = async (promptData?: z.infer<typeof suggestionPromptSchema>) => {
     setIsFetchingMessages(true);
     setFetchError(null);
     
     try {
-      const response = await axios.post('/api/suggest-messages');
+      const response = await axios.post('/api/suggest-messages', {
+        topic: promptData?.topic || ""
+      });
       
       if (response.data && response.data.questions) {
-        // Handle the response format from your Cohere API implementation
         const messages = parseStringMessages(response.data.questions);
         setSuggestedMessages(messages);
       } else {
@@ -90,11 +104,14 @@ export default function SendMessage() {
       console.error('Error fetching messages:', error);
       setFetchError('Failed to fetch suggestions');
       toast.error('Error fetching suggestions');
-      // Fall back to initial messages if there's an error
       setSuggestedMessages(parseStringMessages(initialMessageString));
     } finally {
       setIsFetchingMessages(false);
     }
+  };
+
+  const onSuggestionSubmit = (data: z.infer<typeof suggestionPromptSchema>) => {
+    fetchSuggestedMessages(data);
   };
 
   return (
@@ -137,41 +154,87 @@ export default function SendMessage() {
       </Form>
 
       <div className="space-y-4 my-8">
-        <div className="space-y-2">
-          <Button
-            onClick={fetchSuggestedMessages}
-            className="my-4"
-            disabled={isFetchingMessages}
-          >
-            {isFetchingMessages ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading suggestions...
-              </>
-            ) : (
-              'Suggest Messages'
-            )}
-          </Button>
-          {suggestedMessages.length > 0 && (
-            <p>Click on any message below to select it.</p>
-          )}
-        </div>
+        <Card className="p-4">
+          <CardHeader>
+            <h3 className="text-xl font-semibold">Get Message Suggestions</h3>
+          </CardHeader>
+          <CardContent>
+            <Form {...suggestionForm}>
+              <form onSubmit={suggestionForm.handleSubmit(onSuggestionSubmit)} className="space-y-4">
+                <FormField
+                  control={suggestionForm.control}
+                  name="topic"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What type of message would you like to send?</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="E.g., career advice, travel recommendations, fitness tips..."
+                          className="resize-none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-center">
+                  <Button
+                    type="submit"
+                    disabled={isFetchingMessages}
+                  >
+                    {isFetchingMessages ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading suggestions...
+                      </>
+                    ) : (
+                      'Get Contextual Suggestions'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+            
+            <div className="mt-4">
+              <Button
+                onClick={() => fetchSuggestedMessages()}
+                variant="outline"
+                disabled={isFetchingMessages}
+              >
+                {isFetchingMessages ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Get Random Suggestions'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+
         {suggestedMessages.length > 0 && (
-          <Card>
+          <Card className="w-full">
             <CardHeader>
               <h3 className="text-xl font-semibold">Suggested Messages</h3>
+              <p className="text-sm text-gray-500">Click on any message to use it</p>
             </CardHeader>
-            <CardContent className="flex flex-col space-y-4">
-              {suggestedMessages.map((message, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="mb-2 text-left"
-                  onClick={() => handleMessageClick(message)}
-                >
-                  {message}
-                </Button>
-              ))}
+            <CardContent>
+              <div className="flex flex-col space-y-3">
+                {suggestedMessages.map((message, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="w-full h-auto whitespace-normal text-left py-3 px-4"
+                    onClick={() => handleMessageClick(message)}
+                  >
+                    <span className="line-clamp-none">{message}</span>
+                  </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}

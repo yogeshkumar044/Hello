@@ -37,10 +37,18 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const prompt =
-      "Create a list of three open-ended and engaging questions formatted as a single string. Each question should be separated by '||'. These questions are for an anonymous social messaging platform, like Qooh.me, and should be suitable for a diverse audience. Avoid personal or sensitive topics. For example: 'What’s a hobby you’ve recently started?||If you could have dinner with any historical figure, who would it be?||What’s a simple thing that makes you happy?'.";
+    const body = await req.json();
+    const topic = body.topic || "";
+    
+    let prompt = "";
+    
+    if (topic) {
+      prompt = `Create a list of three direct, personalized, and compelling suggestions based on the following topic or context: "${topic}". These are for a post on an anonymous social platform, and should help the user write something engaging and relevant. If the topic sounds like an introduction, generate three different ways they could introduce themselves clearly and attractively. Return the suggestions as a single string, separated by '||'. Do not explain—just provide the suggestions.`;
+    } else {
+      prompt = "Create a list of three open-ended and engaging questions formatted as a single string. Each question should be separated by '||'. These questions are for an anonymous social messaging platform, like Qooh.me, and should be suitable for a diverse audience. Avoid personal or sensitive topics. For example: 'What's a hobby you've recently started?||If you could have dinner with any historical figure, who would it be?||What's a simple thing that makes you happy?'.";
+    }
 
     const res = await fetch('https://api.cohere.ai/v1/generate', {
       method: 'POST',
@@ -66,8 +74,6 @@ export async function POST() {
     if (!questions) {
       return NextResponse.json({ error: 'Failed to generate questions.' }, { status: 500 });
     }
-
-    console.log(questions,"IIIII")
 
     return NextResponse.json({ questions }, { status: 200 });
   } catch (error: any) {
