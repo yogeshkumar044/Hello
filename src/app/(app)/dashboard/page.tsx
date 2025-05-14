@@ -22,6 +22,7 @@ import { Message } from '@/model/User';
 import { ApiResponse } from '@/types/ApiResponse';
 import { AcceptMessageSchema } from '@/schemas/acceptMessageSchema';
 
+
 function UserDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +50,6 @@ function UserDashboard() {
     try {
       const response = await axios.get<ApiResponse>('/api/accept-messages');
       setValue('acceptMessages', response?.data?.isAcceptingMessages);
-      console.log('Accept messages response:', response.data);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       console.error('Error fetching accept messages:', error);
@@ -68,8 +68,34 @@ function UserDashboard() {
     setIsLoading(true);
     try {
       const response = await axios.get<ApiResponse>('/api/get-messages');
-      console.log('Messages response:', response.data);
-      setMessages(response.data.messages || []);
+      // console.log('Messages response:', response.data);
+
+       const messagesWithoutAuthors = response.data.messages || [];
+
+      const messagesWithAuthors = await Promise.all(
+        messagesWithoutAuthors.map(async (message) => {
+          if (message.author) {
+            try {
+              const authorResponse = await axios.get<ApiResponse>(`/api/get-user?id=${message.author}`);
+              if (authorResponse.data.success) {
+                return {
+                  ...message,
+                  authorUsername: authorResponse.data.user.username,
+                  sendAnonymous:  authorResponse.data.user.isSendingAnonymously
+                };
+              }
+            } catch (error) {
+              console.error('Error fetching author:', error);
+            }
+          }
+          return {
+            ...message,
+            authorUsername: 'Anonymous' // Default if no author info
+          };
+        })
+      );
+      
+      setMessages(messagesWithAuthors);
       if (refresh) {
         toast.success('Refreshed Messages', {
           description: 'Showing latest messages',
@@ -96,14 +122,14 @@ function UserDashboard() {
   }, [status, session?.user, fetchMessages, fetchAcceptMessages]);
 
   const handleSwitchChange = async () => {
-    try {
+    try { 
       const response = await axios.post<ApiResponse>('/api/accept-messages', {
         acceptMessages: !acceptMessages,
       });
       toast.success('Toggle AcceptMessage', {
         description: response.data.message,
       });
-      setValue('acceptMessages', !acceptMessages); // Update form state only after success
+      setValue('acceptMessages', !acceptMessages);
     } catch (error) {
       console.error('Error updating accept messages:', error);
       const axiosError = error as AxiosError<ApiResponse>;
@@ -233,7 +259,7 @@ function UserDashboard() {
         ) : messages.length > 0 ? (
           messages.map((message) => (
             <MessageCard
-              key={message._id}
+              key={message?._id}
               message={message}
               onMessageDelete={handleDeleteMessage}
             />

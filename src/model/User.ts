@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface Message extends Document {
   content: string;
   createdAt: Date;
+  author?: string;
 }
 
 const MessageSchema: Schema<Message> = new mongoose.Schema({
@@ -15,6 +16,10 @@ const MessageSchema: Schema<Message> = new mongoose.Schema({
     required: true,
     default: Date.now,
   },
+  author: {
+    type: String,
+    default: 'Anonymous'
+  }
 });
 
 export interface User extends Document {
@@ -25,6 +30,7 @@ export interface User extends Document {
   verifyCodeExpiry: Date; 
   isVerified: boolean;
   isAcceptingMessages: boolean;
+  isSendingAnonymously: boolean;
   messages: Message[];
 }
 
@@ -59,6 +65,10 @@ const UserSchema: Schema<User> = new mongoose.Schema({
     default: false,
   },
   isAcceptingMessages: {
+    type: Boolean,
+    default: true,
+  },
+  isSendingAnonymously: {
     type: Boolean,
     default: true,
   },

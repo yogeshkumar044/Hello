@@ -4,9 +4,10 @@ import React from 'react';
 import {
   Card,
   CardHeader,
+  CardTitle,
   CardDescription,
-} from "@/components/ui/card";
-
+  CardContent,
+} from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
+} from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -40,17 +41,14 @@ const formatDateTime = (isoDate: string) => {
 };
 
 const MessageCard = ({ message, onMessageDelete }: MessageCardProps) => {
+  console.log(message,"LLLLLLLLLLLLLLLLLLLLLLLL")
   const handleDeleteConfirm = async () => {
     try {
-      const response = await axios.delete<ApiResponse>(
-        `/api/delete-message/${message._id}`
-      );
-
+      const response = await axios.delete<ApiResponse>(`/api/delete-message/${message._id}`);
       toast.success('Deleted successfully', {
         description: response.data.message,
       });
-
-      onMessageDelete(message._id);
+      onMessageDelete(message?._id);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast.error(axiosError.response?.data.message ?? 'Failed to delete message', {
@@ -59,13 +57,33 @@ const MessageCard = ({ message, onMessageDelete }: MessageCardProps) => {
     }
   };
 
+  const author = message?.sendAnonymous ? 'Anonymous' : (message?.authorUsername);
+  const initials = author.charAt(0).toUpperCase();
+
   return (
-    <Card className="relative p-4 shadow-md hover:shadow-lg transition-shadow duration-300">
-      {/* Delete Button */}
-      <div className="absolute top-4 right-4">
+    <Card className="relative border bg-gradient-to-br from-slate-50 via-white to-slate-100 text-gray-800 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <CardHeader className="flex flex-row items-center justify-between px-4 py-2">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-0">
+            <CardTitle className="text-sm font-medium">{author}</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              {formatDateTime(message.createdAt.toString())}
+            </CardDescription>
+          </div>
+        </div>
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-red-500 hover:bg-red-100 hover:text-red-600"
+            >
               <X className="w-4 h-4" />
             </Button>
           </AlertDialogTrigger>
@@ -84,15 +102,13 @@ const MessageCard = ({ message, onMessageDelete }: MessageCardProps) => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-
-      {/* Message Content */}
-      <CardHeader>
-        <CardDescription className="text-base text-foreground mb-2">
-          {message.content.trim()}
-        </CardDescription>
-        <p className="text-sm text-muted-foreground">{formatDateTime(message.createdAt)}</p>
       </CardHeader>
+
+      <CardContent className="px-4 pb-4 pt-1">
+        <p className="text-sm leading-6 text-gray-700 whitespace-pre-wrap">
+          {message.content.trim()}
+        </p>
+      </CardContent>
     </Card>
   );
 };
