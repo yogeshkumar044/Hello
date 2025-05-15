@@ -41,7 +41,7 @@ const formatDateTime = (isoDate: string) => {
 };
 
 const MessageCard = ({ message, onMessageDelete }: MessageCardProps) => {
-  console.log(message,"LLLLLLLLLLLLLLLLLLLLLLLL")
+  // console.log(message,"LLLLLLLLLLLLLLLLLLLLLLLL")
   const handleDeleteConfirm = async () => {
     try {
       const response = await axios.delete<ApiResponse>(`/api/delete-message/${message._id}`);
