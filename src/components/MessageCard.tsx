@@ -24,11 +24,13 @@ import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import axios, { AxiosError } from 'axios';
-import { Message } from '@/model/User';
+// import { Message } from '@/model/User';
 import { ApiResponse } from '@/types/ApiResponse';
 
+import { UIMessage } from '@/types/message';
+
 type MessageCardProps = {
-  message: Message;
+  message: UIMessage;
   onMessageDelete: (messageId: string) => void;
 };
 
@@ -41,7 +43,6 @@ const formatDateTime = (isoDate: string) => {
 };
 
 const MessageCard = ({ message, onMessageDelete }: MessageCardProps) => {
-  // console.log(message,"LLLLLLLLLLLLLLLLLLLLLLLL")
   const handleDeleteConfirm = async () => {
     try {
       const response = await axios.delete<ApiResponse>(`/api/delete-message/${message._id}`);
@@ -57,9 +58,9 @@ const MessageCard = ({ message, onMessageDelete }: MessageCardProps) => {
     }
   };
 
-  const author = message?.sendAnonymous ? 'Anonymous' : (message?.authorUsername);
+  const author = message?.sendAnonymous ? 'Anonymous' : (message?.authorUsername || 'Anonymous');
   const initials = author.charAt(0).toUpperCase();
-
+  
   return (
     <Card className="relative border bg-gradient-to-br from-slate-50 via-white to-slate-100 text-gray-800 shadow-sm hover:shadow-md transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between px-4 py-2">

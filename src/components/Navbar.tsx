@@ -4,22 +4,21 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from './ui/button';
-import { User } from 'next-auth';
 
 function Navbar() {
   const { data: session } = useSession();
-  const user : User = session?.user;
+  const user = session?.user;
 
   return (
     <nav className="p-4 md:p-6 shadow-md bg-gray-900 text-white">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <a
+          <Link
             href="/"
             className="text-3xl md:text-4xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600"
           >
             Hello
-          </a>
+          </Link>
           {session && (
             <Link
               href="/dashboard"

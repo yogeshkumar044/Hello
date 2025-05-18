@@ -6,8 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { CardHeader, CardContent, Card } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -125,7 +123,7 @@ export default function SendMessage() {
     setIsSwitchLoading(true);
     try {
       const response = await axios.get<ApiResponse>('/api/send-anonymously');
-      setValue('sendAnonymously', response?.data?.sendAnonymously);
+      setValue('sendAnonymously', response?.data?.sendAnonymously?? false);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast.error('Error', {
@@ -247,7 +245,7 @@ export default function SendMessage() {
                     )}
                   </Button>
                   <Button
-                    onClick={fetchSuggestedMessages}
+                    onClick={()=>fetchSuggestedMessages()}
                     variant="outline"
                     disabled={isFetchingMessages}
                   >

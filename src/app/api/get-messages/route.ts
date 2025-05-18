@@ -1,16 +1,16 @@
 import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
 import mongoose from 'mongoose';
-import { User } from 'next-auth';
+// import { User } from 'next-auth';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/options';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    const _user: User = session?.user;
+    const _user = session?.user;
 
     if (!session || !_user) {
       return NextResponse.json(
@@ -38,7 +38,6 @@ export async function GET(request: Request) {
       ? user?.messages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       : [];
 
-      // console.log(sortedMessages,"getmessage")
 
     return NextResponse.json(
       { messages: sortedMessages, success: true },

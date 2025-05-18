@@ -2,15 +2,28 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/options';
 import dbConnect from '@/lib/dbConnect';
 import UserModel from '@/model/User';
-import { User } from 'next-auth';
+import { Session } from 'next-auth';
+
+// Define custom session type to match our augmented type definition
+interface CustomSession extends Session {
+  user: {
+    _id: string;
+    email: string;
+    username: string;
+    isVerified: boolean;
+    isAcceptingMessages: boolean;
+    isSendingAnonymously: boolean;
+  }
+}
 
 export async function POST(request: Request) {
   // Connect to the database
   await dbConnect();
 
-  const session = await getServerSession(authOptions);
-  const user: User = session?.user;
-  if (!session || !session.user) {
+  const session = await getServerSession(authOptions) as CustomSession | null;
+  const user = session?.user;
+  
+  if (!session || !user) {
     return Response.json(
       { success: false, message: 'Not authenticated' },
       { status: 401 }
@@ -57,16 +70,12 @@ export async function POST(request: Request) {
   }
 }
 
-
-export async function GET(request: Request) {
-  // Connect to the database
+export async function GET() {
   await dbConnect();
 
-  // Get the user session
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as CustomSession | null;
   const user = session?.user;
 
-  // Check if the user is authenticated
   if (!session || !user) {
     return Response.json(
       { success: false, message: 'Not authenticated' },
